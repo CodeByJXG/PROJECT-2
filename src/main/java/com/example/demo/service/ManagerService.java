@@ -50,7 +50,12 @@ public class ManagerService{
         long totalUsers = userRepo.count();
         long totalLibrarians= repo.count();
         long totalBooks = bookRepo.count();
-        Long booksApprove = acceptedRepo.countByLibrarianUsername(getLibrarianUsername(auth));
+        Long booksApprove = 0;
+        try{
+         booksApprove = acceptedRepo.countByLibrarianUsername(getLibrarianUsername(auth));
+        }catch(Exception ex){
+            
+        }
         return new LibrarianDashboardDto()
         .setTotalUsers(totalUsers)
         .setTotalLibrarians(totalLibrarians)
