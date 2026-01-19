@@ -50,7 +50,7 @@ public class ManagerService{
         long totalUsers = userRepo.count();
         long totalLibrarians= repo.count();
         long totalBooks = bookRepo.count();
-        Long booksApprove = 0;
+        Long booksApprove = 99;
 try{
          booksApprove = acceptedRepo.countByLibrarianUsername(getLibrarianUsername(auth));
         }catch(Exception ex){
