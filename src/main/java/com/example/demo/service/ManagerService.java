@@ -68,7 +68,7 @@ public class ManagerService{
         Object principal = auth.getPrincipal();
         if(principal instanceof MyUserDetails){
             int id = ((MyUserDetails) principal).getId();
-            Librarian librarian= repo.findByUserUserId(id);
+            Librarian librarian= repo.findByUserId(id);
             if(librarian==null){
                 throw new RuntimeException("Cannot find librarian by id provided");
                 
