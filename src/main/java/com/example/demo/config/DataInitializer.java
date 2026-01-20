@@ -17,12 +17,12 @@ public class DataInitializer {
 
     private final MyRepository repo;
     private final PasswordEncoder passwordEncoder;
-    private final JwtProvider provider;
+    private final JwtProvider
+    provider;
     private final MyLibrarianRepository adminRepo;
     @Bean
     CommandLineRunner initDatabase() {
         return args -> {
-
                 if (repo.findByUsername("JulharieMaddin").isEmpty()) {
                 MyUser admin = new MyUser();
                 admin.setUsername("JulharieMaddin");
@@ -32,9 +32,7 @@ public class DataInitializer {
                 librarian.setLibrarianUsername(admin.getUsername());
                 librarian.setUser(repo.save(admin));
                 adminRepo.save(librarian);
-                
-                }
-            
+            }
         };
     }
 }
