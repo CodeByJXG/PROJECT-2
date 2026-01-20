@@ -50,7 +50,7 @@ public class ManagerService{
         long totalUsers = userRepo.count();
         long totalLibrarians= repo.count();
         long totalBooks = bookRepo.count();
-        Long booksApprove = 0;
+        Long booksApprove = Long.valueOf(0);
         try{
          booksApprove = acceptedRepo.countByLibrarianUsername(getLibrarianUsername(auth));
         }catch(Exception ex){
@@ -68,7 +68,7 @@ public class ManagerService{
         Object principal = auth.getPrincipal();
         if(principal instanceof MyUserDetails){
             int id = ((MyUserDetails) principal).getId();
-            Librarian librarian= repo.findUserUserId(id).get();
+            Librarian librarian= repo.findByUserUserId(id);
             if(librarian==null){
                 throw new RuntimeException("Cannot find librarian by id provided");
                 

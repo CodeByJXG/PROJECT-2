@@ -12,4 +12,5 @@ import com.example.demo.model.MyUser;
 public interface MyLibrarianRepository extends JpaRepository<Librarian,Integer>{
     Librarian findByUserUsername(String username);
     Librarian findByLibrarianUsername(String librarianUsername);
+    Librarian findByUserUserId(int id);
 }
