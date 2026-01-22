@@ -18,7 +18,7 @@ import java.net.MalformedURLException;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-
+import com.example.demo.dto.DownloadDto;
 
 //Admin
 @RestController
@@ -94,16 +94,15 @@ public class RegularController{
     
     
     
-    @GetMapping("/download")
-    public ResponseEntity<?> download(@RequestParam("path") String filePath, Authentication auth)throws MalformedURLException{
+    @PostMapping("/download")
+    public ResponseEntity<?> download(@RequestBody DownloadDto dto, Authentication auth)throws MalformedURLException{
         try{     
-            System.out.println(filePath);
             String contentType = "application/octet-stream"; // default
             return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filePath + "\"")
-                .body(service.getResources(filePath,auth));
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + "Download" + "\"")
+                .body(service.getDownloadFile(dto.getAcceptReqId(),auth,dto.getLibrarianUsername()));
            }catch(Exception ex){
-               System.out.println(filePath);
+               ex.printStackTrace(); 
             System.out.println("Error : "+ ex.getMessage());
             Map<String , String> map = new HashMap<>();
             map.put("message",ex.getMessage());

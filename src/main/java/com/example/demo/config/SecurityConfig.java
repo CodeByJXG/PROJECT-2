@@ -75,7 +75,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://library-management-system-kappa-black.vercel.app")); // frontend URL
+        configuration.setAllowedOrigins(List.of("https://library-management-system-kappa-black.vercel.app","http://localhost:5173")); // frontend URL
         configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // if sending cookies/auth headers

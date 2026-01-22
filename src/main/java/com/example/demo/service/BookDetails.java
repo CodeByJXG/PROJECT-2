@@ -14,9 +14,7 @@ public class BookDetails{
         .setTitle(book.getTitle())
         .setAuthor(book.getAuthor())
         .setStock(book.getStock())
-        .setFilePath(book.getFilePath())
         .setLibrarianUsername(book.getLibrarianUsername())
         ;
     }
-    
     }

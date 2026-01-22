@@ -2,6 +2,7 @@
 package com.example.demo.dto;
 
 
+//Required change in frontend ❌
 import lombok.Data;
 import lombok.experimental.Accessors;
 @Data
@@ -11,6 +12,5 @@ public class BookCreateResponse{
     private String title;
     private String author;
     private int stock;
-    private String filePath;
     private String librarianUsername;
 }

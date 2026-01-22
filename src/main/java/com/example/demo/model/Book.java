@@ -2,39 +2,36 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.Accessors;
 
 @Entity
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Accessors(chain = true)
 @Table(name = "books")
 public class Book {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
-    @Column(nullable = false)
-    private String title;
-    
-    private String librarianUsername;
-    @Column(nullable = false)
+    @Column(name = "author", nullable = false)
     private String author;
-
-    @Column(nullable = false)
-    private int stock;
     
-    @ManyToOne
+    // REMOVE @Lob - just use BYTEA column definition
+    @Column(name = "byte_data", columnDefinition = "BYTEA", nullable = false)
+    private byte[] data;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "librarian_id", nullable = false)
     private Librarian librarian;
-
-    // Path of PDF stored on the server
-    @Column(nullable = false)
-    private String filePath;
     
+    @Column(name = "librarian_username")
+    private String librarianUsername;
     
+    @Column(name = "stock", nullable = false)
+    private Integer stock;
+    
+    @Column(name = "title", nullable = false)
+    private String title;
 }

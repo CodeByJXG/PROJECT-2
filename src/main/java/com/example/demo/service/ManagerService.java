@@ -20,6 +20,7 @@ import java.io.File;
 import com.example.demo.repo.MyRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
+import org.springframework.core.io.ByteArrayResource;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,8 +36,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ManagerService{
     private final MyRepository userRepo;
-    private String uploadDir = "uploads/pdfs/";
-    private final String backupDir=uploadDir;
     private final MyLibrarianRepository repo;
     private final BookRepository bookRepo;
     private final BookDetails bookDetails;
@@ -54,7 +53,7 @@ public class ManagerService{
         try{
          booksApprove = acceptedRepo.countByLibrarianUsername(getLibrarianUsername(auth));
         }catch(Exception ex){
-            
+            //Do not touch
         }
         return new LibrarianDashboardDto()
         .setTotalUsers(totalUsers)
@@ -103,36 +102,8 @@ public class ManagerService{
     }
     
     
-    
-    public String saveFile(MultipartFile file) throws IOException {
-       if (file == null || file.isEmpty()) return null;
-
-    // Ensure upload directory exists
-    Path uploadPath = Paths.get(uploadDir); // uploadDir must be set like "/uploads/librarian1"
-    if (!Files.exists(uploadPath)) {
-        Files.createDirectories(uploadPath);
-    }
-
-    // Generate a unique filename
-    String originalFileName = file.getOriginalFilename();
-    String ext = "";
-    if (originalFileName != null && originalFileName.contains(".")) {
-        ext = originalFileName.substring(originalFileName.lastIndexOf("."));
-    }
-    String uniqueFileName = UUID.randomUUID().toString() + ext;
-
-    // Resolve full path
-    Path filePath = uploadPath.resolve(uniqueFileName);
-
-    // Copy file
-    Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-    // Return just the filename (store in DB)
-    return uniqueFileName;
-    }
-    
-    
-    
+   
+    //Done ✅. 1st Pending
     public List<BookCreateResponse> getAllBooks(String username){
         Librarian librarian = repo.findByUserUsername(username);
         List<Book> allBooks = librarian.getBooks();
@@ -140,71 +111,43 @@ public class ManagerService{
          
         } 
     
-    
+    //Done ✅
     public BookCreateResponse saveBook(String username, 
     BookCreateRequest bookCreateRequest,MultipartFile pdfFile)throws Exception{
         
         Librarian librarian = repo.findByUserUsername(username);
-        uploadDir = uploadDir+librarian.getLibrarianUsername();
-        String filePath=saveFile(pdfFile);
-        Book book =bookRepo.save( new Book()
-        .setTitle(bookCreateRequest.getTitle())
-        .setAuthor(bookCreateRequest.getAuthor())
-        .setLibrarianUsername(librarian.getLibrarianUsername())
-        .setStock(bookCreateRequest.getStock())
-        .setFilePath(filePath)
-        .setLibrarian(librarian));
-        uploadDir = backupDir;
+        Book book = new Book();
+        
+        book.setTitle(bookCreateRequest.getTitle());
+        book.setAuthor(bookCreateRequest.getAuthor());
+        book.setLibrarianUsername(librarian.getLibrarianUsername());
+        book.setStock(bookCreateRequest.getStock());
+        book.setData(pdfFile.getBytes());
+        book.setLibrarian(librarian);
+        bookRepo.save(book);
          return bookDetails.getBook(book);
     }
     
-    
+    //Done ✅ 
     public BookCreateResponse updateBook(String username, 
     BookCreateRequest bookCreateRequest,MultipartFile pdfFile,int id)throws Exception{
         Librarian librarian = repo.findByUserUsername(username);
-        uploadDir = uploadDir+librarian.getLibrarianUsername();
-        String filePath= null;
-        if(pdfFile != null){
-        filePath=saveFile(pdfFile);
-        }
         Book book =  bookRepo.findById(id).get();
         book.setTitle(bookCreateRequest.getTitle());
         book.setAuthor(bookCreateRequest.getAuthor());
         book.setLibrarianUsername(librarian.getLibrarianUsername());
         book.setStock(bookCreateRequest.getStock());
-        
-        if(filePath!=null){
-            String previousFilePath = book.getFilePath();
-            deleteFile(backupDir+librarian.getLibrarianUsername()+"/"+previousFilePath);
-            book.setFilePath(filePath);
-            
+        if(pdfFile != null){
+            //Todo
+            book.setData(pdfFile.getBytes());
         }
         bookRepo.save(book);
-        uploadDir = backupDir;
          return bookDetails.getBook(book);
     }
 
-    private void deleteFile(String filePath) {
-    try {
-        Path path = Paths.get(filePath);
-        
-        if (Files.exists(path)) {
-            boolean result = Files.deleteIfExists(path);
-            
-            if (result) {
-                System.out.println("File deleted successfully: " + filePath);
-            } else {
-                System.out.println("Failed to delete file: " + filePath);
-            }
-        } else {
-            System.out.println("File does not exist: " + filePath);
-        }
-    } catch (IOException e) {
-        System.err.println("Error occurred while deleting file: " + e.getMessage());
-        e.printStackTrace();
-    }
-}
+
     
+    //Done ✅ 
     @Transactional
     public void deleteBooks(String username, int id) {
     Librarian librarian = repo.findByUserUsername(username);
@@ -225,24 +168,9 @@ public class ManagerService{
     List<AcceptedRequest> allAcceptedRequestBooks = acceptedRepo.findByBookId(id);
     List<RequestBook> allRequestBooks = requestBookRepo.findByBookId(id);
     
-    for(AcceptedRequest a : allAcceptedRequestBooks){
-        String acceptedFilePath = a.getFilePath();
-        deleteFile(acceptedFilePath);
-        File myFolder = new File(constDownloadDir+a.getUser().getUsername());
-        myFolder.delete();
-        }
-    
     
     acceptedRepo.deleteAll(allAcceptedRequestBooks);
     requestBookRepo.deleteAll(allRequestBooks);
-    
-    // Delete physical file if it exists
-    if (book.getFilePath() != null && !book.getFilePath().isEmpty()) {
-        String fullPath = uploadDir + librarian.getLibrarianUsername() + "/" + book.getFilePath();
-        File myLibrarianFolder = new File(uploadDir + librarian.getLibrarianUsername());
-        deleteFile(fullPath);
-        myLibrarianFolder.delete();
-    }
     
     // Delete from database
     bookRepo.delete(book);
@@ -254,40 +182,7 @@ public class ManagerService{
     
     
     
-    
-    
-    //username is the Users Username || miss consumption bookName is equals to BookPath in Book
-    public String saveDownloadFile(String username,String bookName,String librarianUsername) throws IOException {
-        String downloadDir = constDownloadDir+username;
-    // Ensure upload directory exists
-    Path downloadPath = Paths.get(downloadDir); // uploadDir must be set like "/uploads/librarian1"
-    if (!Files.exists(downloadPath)) {
-        Files.createDirectories(downloadPath);
-    }
-    Path originalPath = Paths.get(uploadDir+librarianUsername+"/"+bookName);
-    if (!Files.exists(originalPath)) {
-        throw new RuntimeException("Cannot find file");
-    }
-    
-    // Generate a unique filename
-    String ext = "";
-    if (bookName != null && bookName.contains(".")) {
-        ext = bookName.substring(bookName.lastIndexOf("."));
-    }
-    String uniqueFileName = UUID.randomUUID().toString() + ext;
-
-    // Resolve full path
-    Path filePath = downloadPath.resolve(uniqueFileName);
-
-    // Copy file
-    Files.copy(originalPath, filePath, StandardCopyOption.REPLACE_EXISTING);
-
-    // Return just the filename (store in DB)
-    return filePath.toString();
-    }
-    
-    
-    
+    //Done ✅ 
     public AcceptedRequest setRequestAccept(int id, Authentication auth)throws Exception {
         String librarianUsername= getLibrarianUsername(auth);
         RequestBook rqBook = requestBookRepo.findById(id).get();
@@ -302,11 +197,8 @@ public class ManagerService{
         }
         int downloadAttemp = 5;
         String username = rqBook.getUser().getUsername();
-        String bookName = rqBook.getBook().getFilePath();
         String reQlibrarianUsername = rqBook.getBook().getLibrarianUsername();
-        String filePath = saveDownloadFile(username,bookName,librarianUsername);
         AcceptedRequest acceptedRequest = new AcceptedRequest();
-        acceptedRequest.setFilePath(filePath);
         acceptedRequest.setUser(rqBook.getUser());
         acceptedRequest.setBook(rqBook.getBook());
         acceptedRequest.setLibrarianUsername(reQlibrarianUsername);
@@ -325,6 +217,7 @@ public class ManagerService{
         return acceptedRepo.save(acceptedRequest);
     }
     
+    //Done ✅ 
     public void setRequestDenied(int id,Authentication auth){
         String librarianUsername= getLibrarianUsername(auth);
         RequestBook rqBook = requestBookRepo.findById(id).get();
@@ -344,7 +237,7 @@ public class ManagerService{
     
     
     
-    
+    //Done ✅ 
     public void deleteRequestBook(int id, Authentication auth){
         String librarianUsername= getLibrarianUsername(auth);
         RequestBook rqBook = requestBookRepo.findById(id).get();
@@ -368,7 +261,7 @@ public class ManagerService{
     
     
     
-        
+    //Done ✅ 
     public List<RequestBooksUserAdmin> getAllRequestBook(Authentication auth){
         String librarianUsername= getLibrarianUsername(auth);
         List<RequestBook> rqBook = requestBookRepo.findByLibrarianUsername(librarianUsername);
@@ -393,18 +286,22 @@ public class ManagerService{
     public String getLibrarianUsername(Authentication auth){
         if(auth.getPrincipal() instanceof MyUserDetails){
         int id = ((MyUserDetails) auth.getPrincipal()).getId();
-        Librarian librarian= repo.findById(id).get();
+        Librarian librarian= repo.findByUserId(id);
         return librarian.getLibrarianUsername();
         }
         throw new RuntimeException("Something went wrong!");
     }
     
     
+
     
-    
-    
-    
-    
-    
-    
+    private Book getBook(List<Book> listOfBooks,int bookId){
+        for(Book book: listOfBooks){
+            if(bookId==book.getId()){
+                return book;
+            }
+        }
+        
+                    throw new RuntimeException("Cannot find bookId "+bookId);
     }
+}

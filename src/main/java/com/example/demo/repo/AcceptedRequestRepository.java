@@ -21,7 +21,6 @@ public interface AcceptedRequestRepository extends JpaRepository<AcceptedRequest
      @Query("SELECT a FROM AcceptedRequest a WHERE a.user.id = :userId" )
      List<AcceptedRequest> findByUserId(@Param("userId") int userId);
     Long countByUserId(Long id);
-     AcceptedRequest findByFilePath(String filePath);
      Long countByLibrarianUsername(String librarianUsername);
      List<AcceptedRequest> findByLibrarianUsername(String librarianUsername);
 }

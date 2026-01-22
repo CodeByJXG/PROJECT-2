@@ -34,16 +34,19 @@ import com.example.demo.repo.BookRepository;
 import java.io.IOException;
 import java.nio.file.*;
 import java.io.File;
+import org.springframework.core.io.ByteArrayResource;
 
 @Service
 @RequiredArgsConstructor
 public class RegularUserService{
-    private final String downloadPathOrg = "download/pdfs/";
+    
     private final MyLibrarianRepository librarianRepo;
     private final MyRepository userRepo;
     private final RequestBookRepository requestBookRepo;
     private final BookRepository bookRepo;
     private final AcceptedRequestRepository acceptedRepo;
+    
+    // Done ✅✓
     public PublicUserBookResponse setRequest(RequestBookDto dto,int bookId, Authentication auth) throws Exception{
         Librarian librarian = librarianRepo.findByLibrarianUsername(dto.getLibrarianUsername());
         if(librarian==null){
@@ -78,6 +81,7 @@ public class RegularUserService{
             }
     }
     
+    // Need debugging to add new features Done ✅ 
     public List<? extends UserRequestBookDto> getRequest(Authentication auth){
         Object principal = auth.getPrincipal();
         List<UserRequestBookDto> allRequestBooks;
@@ -104,7 +108,8 @@ public class RegularUserService{
                     .setStock(r.getBook().getStock())
                     .setLibrarianUsername(r.getBook().getLibrarianUsername())
                     .setRequestStatus(r.getReqStatus())
-                    .setFileDownloadPath(acc.getFilePath())
+                    //This is the debugging progress
+                    .setAcceptReqId(acc.getId())
                     .setDownloadAttempLeft(acc.getDownloadAttemp());
         } else {
             return new RequestDecLPendDto()
@@ -139,6 +144,7 @@ public class RegularUserService{
         return false;
     }
     
+    // NEED DEBUGGING Done ✅ 
     @Transactional
     public void deleteRequest(int id, Authentication auth){
         String userUsername= getUserUsername(auth);
@@ -154,17 +160,12 @@ public class RegularUserService{
         }
         AcceptedRequest req = acceptedRepo.findByRequestBookId(id);
         if(req!=null){
-          
-        String acceptedFilePath = req.getFilePath();
-        deleteFile(acceptedFilePath);
-        File myFolder = new File(downloadPathOrg+req.getUser().getUsername());
-        myFolder.delete();
         acceptedRepo.delete(req);
         }
         requestBookRepo.delete(rqBook);
     }
     
-    
+    //Done ✅ 
         @Transactional
 public void returnRequest(int id, Authentication auth){
     String userUsername = getUserUsername(auth);
@@ -184,10 +185,6 @@ public void returnRequest(int id, Authentication auth){
     // Delete AcceptedRequest
     AcceptedRequest req = acceptedRepo.findByRequestBookId(id);
     if(req != null){
-        String acceptedFilePath = req.getFilePath();
-        deleteFile(acceptedFilePath);
-        File myFolder = new File(downloadPathOrg+req.getUser().getUsername());
-        myFolder.delete();
         acceptedRepo.delete(req);
     }
 
@@ -200,23 +197,18 @@ public void returnRequest(int id, Authentication auth){
     requestBookRepo.delete(rqBook);
 }
     
-    
-    public Resource getResources(String filePath, Authentication auth) throws MalformedURLException{
-        Path downloadFile = Paths.get(filePath);
-        if(!downloadFile.startsWith(downloadPathOrg)){
-            throw new RuntimeException("Error trying to bypass the download path");
-        }
-        Resource resource = new UrlResource(downloadFile.toUri());
-        if(!resource.exists()){
-            throw new RuntimeException("File not found ");
-        }
-        AcceptedRequest acceptBook = acceptedRepo.findByFilePath(filePath);
+    //✅ 
+    public ByteArrayResource getDownloadFile(int id, Authentication auth,String librarianUsername) throws MalformedURLException{
+        AcceptedRequest acceptBook = acceptedRepo.findById(id).get();
         if(acceptBook == null){
             throw new RuntimeException("File is not accepted");
         }
         String acceptUsername = acceptBook.getUser().getUsername();
         if(!acceptUsername.equals(getUserUsername(auth))){
             throw new RuntimeException("Accept book is not yours");
+        }
+        if(!acceptBook.getLibrarianUsername().equals(librarianUsername)){
+            throw new RuntimeException("Request LibrarianUsername is not equals");
         }
         if(acceptBook.getDownloadAttemp()<=0){
             throw new RuntimeException("Maximum downloads reach!");
@@ -226,7 +218,7 @@ public void returnRequest(int id, Authentication auth){
         
         acceptedRepo.save(acceptBook);
         
-        return resource;
+        return new ByteArrayResource(acceptBook.getBook().getData());
     }
     
     
@@ -247,27 +239,7 @@ public void returnRequest(int id, Authentication auth){
         throw new RuntimeException("Something went wrong!");
         }
         
-    private void deleteFile(String filePath) {
-    try {
-        Path path = Paths.get(filePath);
-        
-        if (Files.exists(path)) {
-            boolean result = Files.deleteIfExists(path);
-            
-            if (result) {
-                System.out.println("File deleted successfully: " + filePath);
-            } else {
-                System.out.println("Failed to delete file: " + filePath);
-            }
-        } else {
-            System.out.println("File does not exist: " + filePath);
-        }
-    } catch (IOException e) {
-        System.err.println("Error occurred while deleting file: " + e.getMessage());
-        e.printStackTrace();
-    }
-}
-
+    
 
 
 public UserDashboardDto getUsersDataStatus(Authentication auth){

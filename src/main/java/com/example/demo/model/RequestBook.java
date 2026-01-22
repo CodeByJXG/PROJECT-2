@@ -21,7 +21,6 @@ public class RequestBook{
     @ManyToOne
     @JoinColumn(name="book_id")
     private Book book;
-    
     private String librarianUsername;
     private String reqStatus;
     }
